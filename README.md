@@ -163,15 +163,32 @@ account-wide delete permission.
 
 | Trigger | Tags |
 | --- | --- |
-| Push to `master` | `latest`, `master`, `sha-<short>` |
+| Push to `master` | `edge`, `master`, `sha-<short>` |
 | Tag `v1.4.2` | `1.4.2`, `1.4`, `1`, `latest`, `sha-<short>` |
 | Pull request | Built and tested, not pushed |
+
+`latest` follows releases only, so `docker pull` without a tag never returns
+unreleased code. The tip of `master` is published as `edge` instead. Note the
+consequence: until the first `v*.*.*` tag exists there is no `latest` at all.
+
+`1` and `1.4` move as new patches land and exist for unattended updates. `1.4.2`
+is a promise and should not be re-pushed once released. Only the digest is
+enforced as immutable, so pin production deployments to it:
+
+```
+myuser/certificate-inspector@sha256:...
+```
 
 To cut a release:
 
 ```bash
-git tag v1.0.0 && git push origin v1.0.0
+npm version minor -m "Release v%s"
+git push --follow-tags
 ```
+
+That bumps `package.json`, commits, and creates an annotated `v0.2.0` tag, which
+the workflow turns into the semver tags above. Release candidates named
+`v1.0.0-rc.1` build and publish normally but are never tagged `latest`.
 
 ## Architecture
 

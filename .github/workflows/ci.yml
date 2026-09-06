@@ -82,6 +82,11 @@ jobs:
           # Override the repository name by setting the DOCKERHUB_IMAGE
           # repository variable, e.g. `myuser/certificate-inspector`.
           images: ${{ vars.DOCKERHUB_IMAGE || format('{0}/certificate-inspector', secrets.DOCKERHUB_USERNAME || 'local') }}
+          # `latest` marks the newest release and nothing else. It is produced only
+          # by a semver tag, through metadata-action's default `latest=auto`; the
+          # moving tip of the branch goes out as `edge`. Publishing both from here
+          # would leave `latest` meaning whichever ran last, so a plain `docker pull`
+          # with no tag could quietly hand someone unreleased code.
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -89,7 +94,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=sha,format=short
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=edge,branch=master
           labels: |
             org.opencontainers.image.title=Certificate Inspector
             org.opencontainers.image.description=X.509 certificate and chain inspector that parses everything in the browser
