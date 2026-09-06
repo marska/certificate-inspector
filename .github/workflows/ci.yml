@@ -65,13 +65,29 @@ jobs:
           # Secrets cannot be read in a job-level `if`, so the decision is made
           # here and consumed as a step output.
           HAS_CREDENTIALS: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+          # Writing the repository description is a separate decision. Docker Hub
+          # authenticates an access token for that call and then answers 403: the
+          # endpoint wants the account password, which is a far broader credential
+          # than pushing an image needs. So the step is opt-in and stays skipped
+          # while the secret is absent, rather than failing every release.
+          HAS_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD != '' }}
         run: |
+          PUBLISH=false
+          DESCRIBE=false
+
           if [ "$HAS_CREDENTIALS" = "true" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
-            echo "publish=true" >> "$GITHUB_OUTPUT"
+            PUBLISH=true
+            if [ "$HAS_PASSWORD" = "true" ]; then
+              DESCRIBE=true
+            else
+              echo "::notice::Leaving the Docker Hub description as it is (DOCKERHUB_PASSWORD not set)."
+            fi
           else
-            echo "publish=false" >> "$GITHUB_OUTPUT"
             echo "::notice::Building without publishing (pull request, or DOCKERHUB_USERNAME/DOCKERHUB_TOKEN not set)."
           fi
+
+          echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
+          echo "describe=$DESCRIBE" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@v3
 
@@ -205,13 +221,14 @@ jobs:
       # file because README.md is addressed to people working on the code, not to
       # someone deciding whether to pull the image. Categories are not set here:
       # the API exposes the field but documents no way to write it, and they do
-      # not change between releases anyway.
+      # not change between releases anyway. Opt-in: see HAS_PASSWORD above for
+      # why this needs a credential the push itself does not.
       - name: Sync the Docker Hub description
-        if: steps.gate.outputs.publish == 'true'
+        if: steps.gate.outputs.describe == 'true'
         uses: peter-evans/dockerhub-description@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
           repository: ${{ vars.DOCKERHUB_IMAGE || format('{0}/certificate-inspector', secrets.DOCKERHUB_USERNAME) }}
           short-description: X.509 certificate and chain inspector that parses everything in the browser
           readme-filepath: ./docker/DOCKERHUB.md
