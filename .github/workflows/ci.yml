@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [master, dev]
     tags: ['v*.*.*']
   pull_request:
   workflow_dispatch:
@@ -70,12 +70,17 @@ jobs:
           # Secrets cannot be read in a job-level `if`, so the decision is made
           # here and consumed as a step output.
           HAS_CREDENTIALS: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+          # `dev` is where dependency bumps are integrated, so it gets the full
+          # build, smoke test and scan — but nothing it produces reaches Docker
+          # Hub. A half-migrated eslint upgrade is not an image anyone should be
+          # able to pull.
+          PUBLISHABLE_REF: ${{ github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v') }}
         run: |
-          if [ "$HAS_CREDENTIALS" = "true" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
+          if [ "$HAS_CREDENTIALS" = "true" ] && [ "$PUBLISHABLE_REF" = "true" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
             echo "publish=true" >> "$GITHUB_OUTPUT"
           else
             echo "publish=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Building without publishing (pull request, or DOCKERHUB_USERNAME/DOCKERHUB_TOKEN not set)."
+            echo "::notice::Building without publishing (pull request, branch other than master, or DOCKERHUB_USERNAME/DOCKERHUB_TOKEN not set)."
           fi
 
       - uses: docker/setup-buildx-action@v3

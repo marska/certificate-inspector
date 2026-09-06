@@ -1,11 +1,20 @@
 version: 2
 
+# Everything below opens against `dev`, not `master`. A major bump of eslint or
+# typescript usually cannot land alone — it needs its plugins moved in the same
+# breath — and `dev` is where that is worked out without a half-migrated master.
+#
+# One consequence worth knowing: `target-branch` makes an entry apply to version
+# updates only. Dependabot security updates, the ones raised from an advisory,
+# always open against the default branch and ignore the settings here, so an
+# urgent fix still arrives on master rather than waiting in the queue.
 updates:
   # The half of the vulnerability surface Trivy cannot see. A static export ships
   # these as minified chunks with no package metadata left, so the lockfile is the
   # only place their versions are still legible.
   - package-ecosystem: npm
     directory: /
+    target-branch: dev
     schedule:
       interval: weekly
       day: monday
@@ -24,6 +33,7 @@ updates:
   # credentials, and they are pinned to tags that move under them.
   - package-ecosystem: github-actions
     directory: /
+    target-branch: dev
     schedule:
       interval: weekly
       day: monday
@@ -33,6 +43,7 @@ updates:
   # rebuild only refreshes patches inside the tag already pinned.
   - package-ecosystem: docker
     directory: /
+    target-branch: dev
     schedule:
       interval: weekly
       day: monday

@@ -165,6 +165,20 @@ JS chunks, where no scanner can recover a package name or version. They are cove
 `package-lock.json` by [Dependabot](.github/dependabot.yml) instead, which also watches the
 GitHub Actions used here and the base images in the Dockerfile.
 
+### Branches
+
+`master` is what gets published. `dev` is where dependency updates are integrated:
+Dependabot opens its pull requests there, majors that need coordinating — a compiler and its
+lint plugins, a test runner and its coverage provider — are worked out on that branch, and
+only a green `dev` is merged into `master`.
+
+Both branches get the same pipeline: verify, build, smoke test, scan. Only `master` and
+`v*.*.*` tags publish, so nothing half-migrated can be pulled from Docker Hub.
+
+Security updates are the exception and deliberately so: Dependabot always raises those
+against the default branch, ignoring `target-branch`, so an advisory reaches `master`
+directly instead of queuing behind a migration.
+
 ### Weekly rebuild
 
 A published image ages while its source stands still, because fixes reach `1.29-alpine`
