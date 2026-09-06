@@ -198,3 +198,20 @@ jobs:
             echo "${{ steps.meta.outputs.tags }}"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # The registry push carries the manifest and the OCI labels; it does not
+      # touch the description shown on the repository page, which is Docker Hub's
+      # own metadata and has to be written through its API. Kept in a separate
+      # file because README.md is addressed to people working on the code, not to
+      # someone deciding whether to pull the image. Categories are not set here:
+      # the API exposes the field but documents no way to write it, and they do
+      # not change between releases anyway.
+      - name: Sync the Docker Hub description
+        if: steps.gate.outputs.publish == 'true'
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ vars.DOCKERHUB_IMAGE || format('{0}/certificate-inspector', secrets.DOCKERHUB_USERNAME) }}
+          short-description: X.509 certificate and chain inspector that parses everything in the browser
+          readme-filepath: ./docker/DOCKERHUB.md

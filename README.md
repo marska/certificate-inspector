@@ -190,6 +190,11 @@ That bumps `package.json`, commits, and creates an annotated `v0.2.0` tag, which
 the workflow turns into the semver tags above. Release candidates named
 `v1.0.0-rc.1` build and publish normally but are never tagged `latest`.
 
+The repository overview on Docker Hub is written by the workflow from
+`docker/DOCKERHUB.md` on every publish, so edit that file rather than the page:
+anything typed into Docker Hub by hand is overwritten at the next release.
+Categories are not managed here and stay as set in the Docker Hub UI.
+
 ## Architecture
 
 Parsing is completely separate from React, so it can be tested and reused without a DOM:
