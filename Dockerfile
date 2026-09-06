@@ -46,6 +46,22 @@ RUN npm run build
 # no root and no capabilities.
 FROM nginxinc/nginx-unprivileged:${NGINX_VERSION} AS runner
 
+# The Alpine packages inside the base image are as old as its last rebuild, which
+# is not our schedule to keep: at the time of writing 1.29-alpine shipped 33
+# fixable HIGH advisories in curl, openssl, util-linux, expat, libxml2 and c-ares,
+# every one of them already patched in the v3.23 branch the image points at. So
+# take the patches at build time instead of waiting for the maintainer, and let
+# the weekly rebuild in CI be the thing that keeps them current.
+#
+# The cost is honest: the contents of this layer depend on when it was built, so
+# two builds of one commit are no longer byte-identical. The smoke test in CI runs
+# against exactly what gets published, which is what catches an upgrade that
+# breaks something.
+USER root
+RUN apk upgrade --no-cache
+# Root is dropped again by the USER 101 at the end of this stage, which the smoke
+# test verifies by reading the running container's uid.
+
 # CI adds source, revision and created labels via docker/metadata-action.
 LABEL org.opencontainers.image.title="Certificate Inspector" \
       org.opencontainers.image.description="X.509 certificate and chain inspector that parses everything in the browser"

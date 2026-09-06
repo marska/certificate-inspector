@@ -151,6 +151,14 @@ There are two surfaces here and one scanner cannot see both.
 anything is published. Findings with no upstream fix are ignored on purpose: a gate nobody
 can satisfy is a gate everybody learns to click past.
 
+The runtime stage runs `apk upgrade` for the same reason the scan exists. Packages inside a
+base image are as old as its last rebuild, which is somebody else's schedule: when this was
+added, `1.29-alpine` carried 33 fixable HIGH advisories in curl, openssl, util-linux, expat,
+libxml2 and c-ares, all of them already patched in the Alpine branch the image points at.
+Taking those at build time drops the count to zero. It costs reproducibility — two builds of
+one commit are no longer byte-identical — which is why the smoke test runs against the exact
+image that gets published.
+
 **The dependencies** — `pkijs`, `asn1js`, React, Next — are invisible to that scan. A
 static export leaves no `node_modules` in the image; those libraries are minified into the
 JS chunks, where no scanner can recover a package name or version. They are covered from
