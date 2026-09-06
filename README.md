@@ -1,5 +1,7 @@
 # Certificate Inspector
 
+**[cert.artuditu.net](https://cert.artuditu.net)** — no install, nothing to sign up for.
+
 A web app for inspecting X.509 certificates. Paste a certificate, a Base64 blob, a DER
 file or a whole chain; the format is detected automatically and every property is laid
 out in a readable form.
@@ -59,6 +61,18 @@ ships no trust store, so it reports **Cryptographic chain: valid** and **System 
 unknown** separately, and never says "trusted".
 
 ## Run it
+
+### Hosted
+
+[cert.artuditu.net](https://cert.artuditu.net) serves the current `master`, deployed by the
+same pipeline that publishes the image and from the same tested build.
+
+It is worth saying what that does and does not change. The parsing still happens on your
+machine — the host sends files and never sees a certificate, and the same
+`connect-src 'none'` policy is enforced there, generated from the same nginx snippet the
+container uses. What you give up compared to running it yourself is having to trust that
+the files served are the ones in this repository. If that matters for the certificates you
+handle, run the image.
 
 ### With Docker
 
