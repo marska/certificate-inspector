@@ -151,7 +151,6 @@ Add these under **Settings → Secrets and variables → Actions**:
 | Secret | `DOCKERHUB_USERNAME` | Your Docker Hub username |
 | Secret | `DOCKERHUB_TOKEN` | A Docker Hub **access token** (Account Settings → Personal access tokens), not your password |
 | Variable | `DOCKERHUB_IMAGE` | Optional. Full repository name, e.g. `myuser/x509-inspector`. Defaults to `<username>/certificate-inspector` |
-| Secret | `DOCKERHUB_PASSWORD` | Optional, and only to sync the description. See below before adding it |
 
 Until those exist the workflow still runs — it builds and smoke tests the image, then logs
 a notice that it is skipping the push. Nothing goes red just because publishing is not set
@@ -160,13 +159,12 @@ up yet.
 Give the access token **Read & Write** scope on the target repository only. It never needs
 account-wide delete permission.
 
-`DOCKERHUB_PASSWORD` is deliberately separate and deliberately optional. Docker Hub accepts
-an access token for pushing images but answers `403 Forbidden` when that same token tries to
-write the repository description, so syncing it needs the account password — a credential
-that can also delete every repository the account owns. Weigh that against a paragraph of
-text that changes a couple of times a year; setting the description by hand in the Docker
-Hub UI is a defensible choice. Without the secret the sync step is skipped and the build
-stays green.
+The text for the Docker Hub page lives in [`docker/DOCKERHUB.md`](docker/DOCKERHUB.md) and is
+pasted into the repository overview by hand. It is not synced by the workflow on purpose:
+Docker Hub accepts an access token for pushing images but answers `403 Forbidden` when the
+same token tries to write the description, so automating it would mean giving CI the account
+password — a credential that can delete every repository the account owns, traded for a
+paragraph that changes a couple of times a year.
 
 ### Tags produced
 
@@ -198,11 +196,6 @@ git push --follow-tags
 That bumps `package.json`, commits, and creates an annotated `v0.2.0` tag, which
 the workflow turns into the semver tags above. Release candidates named
 `v1.0.0-rc.1` build and publish normally but are never tagged `latest`.
-
-The repository overview on Docker Hub is written by the workflow from
-`docker/DOCKERHUB.md` on every publish, so edit that file rather than the page:
-anything typed into Docker Hub by hand is overwritten at the next release.
-Categories are not managed here and stay as set in the Docker Hub UI.
 
 ## Architecture
 
