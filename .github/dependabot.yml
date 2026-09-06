@@ -1,0 +1,38 @@
+version: 2
+
+updates:
+  # The half of the vulnerability surface Trivy cannot see. A static export ships
+  # these as minified chunks with no package metadata left, so the lockfile is the
+  # only place their versions are still legible.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    # Routine version churn arrives as two pull requests rather than fifteen.
+    # Majors stay separate: they are the ones that need reading.
+    groups:
+      production:
+        dependency-type: production
+        update-types: [minor, patch]
+      development:
+        dependency-type: development
+        update-types: [minor, patch]
+
+  # Actions are executable code in the pipeline with access to the publishing
+  # credentials, and they are pinned to tags that move under them.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+
+  # Watches the base images in the Dockerfile. It catches a new minor line —
+  # nginx 1.30-alpine appearing — which the weekly rebuild never would, since a
+  # rebuild only refreshes patches inside the tag already pinned.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday

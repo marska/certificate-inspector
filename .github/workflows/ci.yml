@@ -6,6 +6,11 @@ on:
     tags: ['v*.*.*']
   pull_request:
   workflow_dispatch:
+  # A published image ages while its source stands still: Alpine and nginx fixes
+  # land in the base image tag continuously and reach us only on a rebuild. This
+  # keeps `edge` current and re-scans against fresh packages once a week.
+  schedule:
+    - cron: '0 5 * * 1'
 
 # A newer commit makes an in-flight run pointless, except on master and tags where
 # every published image should correspond to a completed run.
@@ -107,6 +112,12 @@ jobs:
           context: .
           load: true
           tags: certificate-inspector:smoke-test
+          # The whole point of the scheduled run is to pick up a patched base
+          # image, and the layer cache would defeat exactly that: same Dockerfile,
+          # same context, cached answer. Resolve FROM afresh on that path only, so
+          # ordinary pushes keep the cache and stay fast.
+          pull: ${{ github.event_name == 'schedule' }}
+          no-cache: ${{ github.event_name == 'schedule' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -161,6 +172,24 @@ jobs:
       - name: Container logs, if the smoke test failed
         if: failure()
         run: docker logs smoke || true
+
+      # Scans the base image: Alpine packages and nginx. It cannot see the app's
+      # npm dependencies, because a static export leaves no node_modules in the
+      # image — pkijs and the rest are minified into the JS chunks, where no
+      # scanner will identify a package or a version. Dependabot covers that half
+      # from package-lock.json; neither check substitutes for the other.
+      #
+      # `ignore-unfixed` on purpose: a finding with no upstream fix is not a
+      # decision anyone can act on here, and a gate that cannot be satisfied is a
+      # gate people learn to ignore.
+      - name: Scan the image for known vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: certificate-inspector:smoke-test
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          format: table
 
       - name: Log in to Docker Hub
         if: steps.gate.outputs.publish == 'true'

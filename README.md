@@ -136,11 +136,38 @@ request:
 1. **verify** — type check, lint, the full test suite, and the static export build.
 2. **image** — builds the container, starts it with the hardened flags above, and smoke
    tests it: the page is served, the JS bundle loads, the security headers are present,
-   an unknown path returns 404 rather than 200, and the process is not root.
+   an unknown path returns 404 rather than 200, and the process is not root. Then Trivy
+   scans it and fails the build on a fixable HIGH or CRITICAL finding.
 
 Only after all of that, and only for pushes to `master` or a `v*.*.*` tag, does it build for
 `linux/amd64` and `linux/arm64` and push to Docker Hub. Pull requests build and test the
 image but never publish.
+
+### Vulnerability scanning
+
+There are two surfaces here and one scanner cannot see both.
+
+**The image** — Alpine packages and nginx — is scanned by Trivy on every run, before
+anything is published. Findings with no upstream fix are ignored on purpose: a gate nobody
+can satisfy is a gate everybody learns to click past.
+
+**The dependencies** — `pkijs`, `asn1js`, React, Next — are invisible to that scan. A
+static export leaves no `node_modules` in the image; those libraries are minified into the
+JS chunks, where no scanner can recover a package name or version. They are covered from
+`package-lock.json` by [Dependabot](.github/dependabot.yml) instead, which also watches the
+GitHub Actions used here and the base images in the Dockerfile.
+
+### Weekly rebuild
+
+A published image ages while its source stands still, because fixes reach `1.29-alpine`
+long after the tag stops moving in the Dockerfile. The workflow therefore also runs on a
+schedule, and on that path only it builds with `--pull --no-cache`: with the layer cache in
+play the rebuild would produce a byte-identical image and achieve nothing.
+
+That refreshes `edge`. It deliberately does **not** refresh `latest`, which is pinned to the
+commit a release was cut from — moving it would break the promise that `1.0.0` is one exact
+artifact. When a scan or a rebuild turns up something that matters, the answer is to cut a
+patch release, which is two commands and leaves a version number behind saying what changed.
 
 ### Setting up Docker Hub publishing
 
