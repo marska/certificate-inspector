@@ -1,0 +1,195 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*.*.*']
+  pull_request:
+  workflow_dispatch:
+
+# A newer commit makes an in-flight run pointless, except on master and tags where
+# every published image should correspond to a completed run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22'
+  NEXT_TELEMETRY_DISABLED: '1'
+
+jobs:
+  verify:
+    name: Types, lint and tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build static export
+        run: npm run build
+
+      - name: Check the export really is static
+        run: |
+          test -f out/index.html
+          test -d out/_next/static
+          echo "Exported $(find out -type f | wc -l) files, $(du -sh out | cut -f1) total"
+
+  image:
+    name: Docker image
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish only from this repository, and never from a pull request
+        id: gate
+        env:
+          # Secrets cannot be read in a job-level `if`, so the decision is made
+          # here and consumed as a step output.
+          HAS_CREDENTIALS: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+        run: |
+          if [ "$HAS_CREDENTIALS" = "true" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Building without publishing (pull request, or DOCKERHUB_USERNAME/DOCKERHUB_TOKEN not set)."
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Work out image name and tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # Override the repository name by setting the DOCKERHUB_IMAGE
+          # repository variable, e.g. `myuser/certificate-inspector`.
+          images: ${{ vars.DOCKERHUB_IMAGE || format('{0}/certificate-inspector', secrets.DOCKERHUB_USERNAME || 'local') }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=Certificate Inspector
+            org.opencontainers.image.description=X.509 certificate and chain inspector that parses everything in the browser
+
+      # Built for the runner's architecture first so the image can actually be
+      # started and exercised before anything is pushed.
+      - name: Build for smoke test
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: certificate-inspector:smoke-test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test the image
+        run: |
+          set -euo pipefail
+
+          # The same hardening the compose file applies, so a change that breaks
+          # it fails here rather than on someone's server.
+          docker run -d --name smoke \
+            --read-only \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs /tmp:mode=1777,size=16m \
+            --tmpfs /var/cache/nginx:mode=1777,size=16m \
+            -p 8080:8080 \
+            certificate-inspector:smoke-test
+
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/healthz >/dev/null 2>&1; then break; fi
+            if [ "$i" = "30" ]; then
+              echo "::error::Container never became healthy"
+              docker logs smoke
+              exit 1
+            fi
+            sleep 1
+          done
+
+          echo "--- the page is served ---"
+          curl -fsS http://127.0.0.1:8080/ | grep -q 'Certificate Inspector'
+
+          echo "--- the app bundle is served ---"
+          chunk=$(curl -fsS http://127.0.0.1:8080/ | grep -o '/_next/static/chunks/[^"]*\.js' | head -1)
+          test -n "$chunk"
+          curl -fsS -o /dev/null "http://127.0.0.1:8080${chunk}"
+
+          echo "--- security headers are present ---"
+          headers=$(curl -fsSI http://127.0.0.1:8080/)
+          echo "$headers"
+          echo "$headers" | grep -qi "content-security-policy:.*connect-src 'none'"
+          echo "$headers" | grep -qi 'x-content-type-options: nosniff'
+          echo "$headers" | grep -qi 'x-frame-options: DENY'
+
+          echo "--- unknown paths return 404, not 200 ---"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/does-not-exist)" = "404"
+
+          echo "--- it does not run as root ---"
+          test "$(docker exec smoke id -u)" = "101"
+
+          docker rm -f smoke
+
+      - name: Container logs, if the smoke test failed
+        if: failure()
+        run: docker logs smoke || true
+
+      - name: Log in to Docker Hub
+        if: steps.gate.outputs.publish == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Only the nginx layer differs per architecture — the static export is
+      # built once on the runner, so arm64 costs almost nothing.
+      - name: Set up QEMU for the arm64 runtime layer
+        if: steps.gate.outputs.publish == 'true'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build and push
+        if: steps.gate.outputs.publish == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Summarise
+        if: steps.gate.outputs.publish == 'true'
+        run: |
+          {
+            echo "### Published"
+            echo
+            echo '```'
+            echo "${{ steps.meta.outputs.tags }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

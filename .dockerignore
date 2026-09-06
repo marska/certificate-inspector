@@ -1,0 +1,31 @@
+# Keep the build context to the sources the image actually needs.
+.git
+.github
+.claude
+node_modules
+.next
+out
+coverage
+tests
+*.tsbuildinfo
+
+# Docs and local tooling play no part in the build.
+README.md
+AGENTS.md
+CLAUDE.md
+docker-compose.yml
+Dockerfile
+.dockerignore
+.gitignore
+vitest.config.mts
+
+# Never let a stray key or certificate end up in a layer.
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+*.p12
+*.pfx
+.env.local
+.env.*.local

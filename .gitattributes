@@ -1,0 +1,26 @@
+# The repository stores text as LF and checks it out as LF on every platform.
+# This overrides `core.autocrlf`, which Git for Windows enables by default and
+# which would otherwise rewrite the working tree to CRLF on checkout. That
+# matters here beyond taste: the working tree is the Docker build context, and
+# CRLF reaches the image in the nginx configuration and the Dockerfile itself.
+* text=auto eol=lf
+
+# Binary assets, so Git never tries to normalise or diff them as text.
+*.png binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+
+# Encoded certificates and keys are not text to be normalised either, in case a
+# sample ever gets committed on purpose.
+*.der binary
+*.p12 binary
+*.pfx binary
+*.p7b binary
+
+# Generated: collapse it in diffs and mark it as not-for-review on GitHub.
+package-lock.json -diff linguist-generated

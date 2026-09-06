@@ -1,0 +1,167 @@
+@import "tailwindcss";
+
+/* Theme is driven by a class on <html>, set before paint by the inline script
+   in layout.tsx, so there is no flash of the wrong theme. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --canvas: #fbfbfc;
+  --surface: #ffffff;
+  --surface-2: #f4f4f5;
+  --surface-3: #ebebed;
+  --border: #e2e2e5;
+  --border-strong: #cfcfd4;
+  --text: #18181b;
+  --text-muted: #5c5c66;
+  /* Kept at ~5:1 on --surface: these carry real labels, not decoration. */
+  --text-subtle: #6b6b75;
+
+  --accent: #2563eb;
+  --accent-soft: #eff4ff;
+  --accent-border: #c3d5fd;
+
+  --success: #15803d;
+  --success-soft: #edfaf1;
+  --success-border: #b7e6c7;
+
+  --warning: #b45309;
+  --warning-soft: #fff7ec;
+  --warning-border: #fcd9a8;
+
+  --danger: #be123c;
+  --danger-soft: #fef2f4;
+  --danger-border: #f9c6d0;
+
+  --info: #0e7490;
+  --info-soft: #edfafd;
+  --info-border: #b3e4ef;
+
+  --shadow: 0 1px 2px rgb(16 16 20 / 0.05), 0 1px 3px rgb(16 16 20 / 0.04);
+}
+
+.dark {
+  --canvas: #0a0a0c;
+  --surface: #121215;
+  --surface-2: #191920;
+  --surface-3: #23232b;
+  --border: #26262e;
+  --border-strong: #3a3a45;
+  --text: #eeeef2;
+  --text-muted: #a2a2ad;
+  --text-subtle: #8a8a96;
+
+  --accent: #6b9bff;
+  --accent-soft: #131b30;
+  --accent-border: #27385f;
+
+  --success: #56d68a;
+  --success-soft: #0e1f16;
+  --success-border: #1e4430;
+
+  --warning: #f0b45e;
+  --warning-soft: #241a0e;
+  --warning-border: #4d3a1c;
+
+  --danger: #ff8095;
+  --danger-soft: #260f16;
+  --danger-border: #55212c;
+
+  --info: #5cc8e0;
+  --info-soft: #0c1e23;
+  --info-border: #1c4049;
+
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-subtle: var(--text-subtle);
+
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-border: var(--accent-border);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-border: var(--success-border);
+
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-border: var(--warning-border);
+
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-border: var(--danger-border);
+
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-info-border: var(--info-border);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Segoe UI Mono",
+    "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+html {
+  color-scheme: light;
+}
+
+.dark html,
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--canvas);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+/* Thin scrollbars keep dense technical panes from feeling cluttered. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--border-strong);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 9999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Highlighted search matches inside field values. */
+mark {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 2px;
+  padding: 0 1px;
+}
