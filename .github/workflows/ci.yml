@@ -83,7 +83,7 @@ jobs:
             echo "::notice::Building without publishing (pull request, branch other than master, or DOCKERHUB_USERNAME/DOCKERHUB_TOKEN not set)."
           fi
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       - name: Work out image name and tags
         id: meta
