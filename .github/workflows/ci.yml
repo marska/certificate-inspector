@@ -97,7 +97,7 @@ jobs:
             echo "::notice::Building without publishing (pull request, branch other than master, or DOCKERHUB_USERNAME/DOCKERHUB_TOKEN not set)."
           fi
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       - name: Work out image name and tags
         id: meta
@@ -126,7 +126,7 @@ jobs:
       # Built for the runner's architecture first so the image can actually be
       # started and exercised before anything is pushed.
       - name: Build for smoke test
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           load: true
@@ -225,7 +225,7 @@ jobs:
 
       - name: Build and push
         if: steps.gate.outputs.publish == 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64
