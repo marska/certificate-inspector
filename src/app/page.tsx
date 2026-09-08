@@ -20,6 +20,7 @@ import { analyzeInput } from '@/lib/certificate';
 import { decodeInput } from '@/lib/certificate/decode-input';
 import type { AnalysisResult } from '@/lib/certificate/types';
 import { cn } from '@/lib/utils';
+import { APP_VERSION } from '@/lib/version';
 import type { TimeZoneMode } from '@/lib/view-model';
 
 const TABS = [
@@ -453,6 +454,9 @@ function SiteFooter() {
         Signature verification proves the cryptographic relations between the certificates
         you supplied. It says nothing about whether your operating system or browser trusts
         the root — this tool carries no trust store.
+      </p>
+      <p className="mt-3">
+        Certificate Inspector <span className="font-mono">v{APP_VERSION}</span>
       </p>
     </footer>
   );
