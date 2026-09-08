@@ -1,4 +1,19 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import type { NextConfig } from 'next';
+
+/**
+ * The version shown in the footer comes from package.json, so `npm version`
+ * remains the single place a release is declared. Reading it here inlines the
+ * string at build time; importing package.json from a component instead would
+ * ship the whole dependency list to the browser, and the point of a static
+ * export is that the bundle reveals no inventory to scan.
+ */
+const { version } = JSON.parse(
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'package.json'), 'utf8'),
+) as { version: string };
 
 const nextConfig: NextConfig = {
   /**
@@ -15,6 +30,10 @@ const nextConfig: NextConfig = {
   // Emit `route/index.html`, so any static file server resolves routes without
   // needing rewrite rules.
   trailingSlash: true,
+
+  env: {
+    NEXT_PUBLIC_APP_VERSION: version,
+  },
 };
 
 export default nextConfig;
