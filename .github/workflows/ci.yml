@@ -65,7 +65,7 @@ jobs:
       # Handed to the deploy job rather than rebuilt there, so the bytes that go
       # to Cloudflare are the bytes these tests ran against.
       - name: Keep the export for deployment
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: static-export
           path: out
