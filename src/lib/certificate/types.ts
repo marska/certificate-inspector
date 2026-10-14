@@ -210,6 +210,10 @@ export type DecodeIssueCode =
   | 'CSR_DETECTED'
   | 'PKCS7_UNSUPPORTED'
   | 'PKCS12_UNSUPPORTED'
+  | 'PKCS12_PASSWORD_REQUIRED'
+  | 'PKCS12_WRONG_PASSWORD'
+  | 'PKCS12_NO_MAC'
+  | 'PKCS12_ENCRYPTED_KEY'
   | 'PEM_MISSING_END'
   | 'PEM_MISSING_BEGIN'
   | 'INVALID_BASE64'
@@ -236,6 +240,13 @@ export interface DecodeResult {
   issues: DecodeIssue[];
   /** True when the input contained a private key block. */
   containsPrivateKey: boolean;
+  /**
+   * A PKCS#12 / PFX container found in the input. Opening it needs WebCrypto
+   * and possibly a password, so `decodeInput` leaves it to `analyzeInput`.
+   */
+  pkcs12?: Uint8Array;
+  /** True when the PFX needs a (different) password to be read in full. */
+  passwordRequired: boolean;
 }
 
 /* ------------------------------------------------------------------ */

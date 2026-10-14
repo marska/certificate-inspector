@@ -30,6 +30,7 @@ class Decoder {
   readonly blocks: DecodedBlock[] = [];
   readonly issues: DecodeIssue[] = [];
   containsPrivateKey = false;
+  pkcs12?: Uint8Array;
   format: InputFormat = 'unknown';
 
   issue(
@@ -74,6 +75,7 @@ export function decodeInput(input: string | Uint8Array): DecodeResult {
 
   if (
     decoder.blocks.length === 0 &&
+    !decoder.pkcs12 &&
     decoder.format !== 'empty' &&
     !decoder.issues.some((i) => i.severity === 'error')
   ) {
@@ -91,6 +93,8 @@ export function decodeInput(input: string | Uint8Array): DecodeResult {
     detectedFormatLabel: FORMAT_LABELS[decoder.format],
     issues: decoder.issues,
     containsPrivateKey: decoder.containsPrivateKey,
+    pkcs12: decoder.pkcs12,
+    passwordRequired: false,
   };
 }
 
@@ -369,14 +373,10 @@ function decodeDer(bytes: Uint8Array, decoder: Decoder, via: InputFormat): void 
     const shape = detectDerShape(der);
 
     if (shape === 'pkcs12') {
+      // Decrypting needs WebCrypto (async) and maybe a password, so the
+      // container is handed on to analyzeInput rather than opened here.
       decoder.format = 'pkcs12';
-      decoder.issue(
-        'error',
-        'PKCS12_UNSUPPORTED',
-        'PKCS#12 / PFX containers are not supported yet.',
-        'This file is an encrypted key store. Export the certificate first, for ' +
-          'example with: openssl pkcs12 -in store.pfx -clcerts -nokeys -out cert.pem',
-      );
+      decoder.pkcs12 = der;
       return;
     }
 

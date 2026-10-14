@@ -1,10 +1,12 @@
 import { decodeInput } from './decode-input';
+import { openPkcs12 } from './pkcs12';
 import { parseCertificates } from './parse-certificate';
 import { validateChain } from './validate-chain';
 import type { AnalysisResult, DecodeIssue } from './types';
 
 export * from './types';
 export { decodeInput } from './decode-input';
+export { decodePkcs12, openPkcs12 } from './pkcs12';
 export {
   detectFormat,
   extractPemBlocks,
@@ -37,6 +39,8 @@ export * from './oids';
 export interface AnalyzeOptions {
   now?: Date;
   verifySignatures?: boolean;
+  /** Password for a PKCS#12 / PFX container; an empty password is tried by default. */
+  password?: string;
 }
 
 /**
@@ -47,7 +51,7 @@ export async function analyzeInput(
   input: string | Uint8Array,
   options: AnalyzeOptions = {},
 ): Promise<AnalysisResult> {
-  const decode = decodeInput(input);
+  const decode = await openPkcs12(decodeInput(input), options.password);
   const { certificates, errors } = await parseCertificates(
     decode.blocks.map((block) => block.der),
     { now: options.now },

@@ -7,6 +7,7 @@ import { CertificateDetails } from '@/components/CertificateDetails';
 import { CertificateExtensions } from '@/components/CertificateExtensions';
 import { CertificateInput } from '@/components/CertificateInput';
 import { CertificateStatus } from '@/components/CertificateStatus';
+import { Pkcs12Password } from '@/components/Pkcs12Password';
 import { ChainReport } from '@/components/ChainReport';
 import { Asn1View, OpenSslView, RawCertificate } from '@/components/RawViews';
 import {
@@ -40,6 +41,8 @@ export default function Home() {
   const [fileInfo, setFileInfo] = useState<
     { name: string; formatLabel: string } | undefined
   >();
+  /** Submitted PFX password; undefined tries an empty one. */
+  const [password, setPassword] = useState<string | undefined>();
 
   const [result, setAnalysis] = useState<AnalysisResult | undefined>();
   const [busy, setBusy] = useState(false);
@@ -66,7 +69,7 @@ export default function Home() {
     let cancelled = false;
     const timer = setTimeout(() => {
       setBusy(true);
-      analyzeInput(source)
+      analyzeInput(source, { password })
         .then((result) => {
           if (cancelled) return;
           setAnalysis(result);
@@ -86,7 +89,7 @@ export default function Home() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [text, binary]);
+  }, [text, binary, password]);
 
   /* ---------------- keyboard: "/" focuses search ---------------- */
 
@@ -132,6 +135,7 @@ export default function Home() {
     setText(value);
     setBinary(undefined);
     setFileInfo(undefined);
+    setPassword(undefined);
   }, []);
 
   const onBinary = useCallback((bytes: Uint8Array, name: string) => {
@@ -140,6 +144,7 @@ export default function Home() {
     const decoded = decodeInput(bytes);
     setFileInfo({ name, formatLabel: decoded.detectedFormatLabel });
     setSelectedId(undefined);
+    setPassword(undefined);
     if (decoded.blocks.length > 0) {
       setBinary(undefined);
       setText(decoded.blocks.map((block) => block.pem).join('\n\n'));
@@ -153,6 +158,7 @@ export default function Home() {
     setText('');
     setBinary(undefined);
     setFileInfo(undefined);
+    setPassword(undefined);
     setAnalysis(undefined);
     setSelectedId(undefined);
     setQuery('');
@@ -194,6 +200,11 @@ export default function Home() {
         onClear={onClear}
         onLoadSample={() => void onLoadSample()}
       />
+
+      {analysis?.decode.passwordRequired ? (
+        // Keyed on the file so a new container starts with an empty field.
+        <Pkcs12Password key={fileInfo?.name} onSubmit={setPassword} busy={busy} />
+      ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <PrivacyNote />
@@ -410,8 +421,8 @@ function EmptyIntro({ onLoadSample }: { onLoadSample: () => void }) {
     <Panel title="What this does">
       <div className="grid grid-cols-1 gap-px bg-line sm:grid-cols-3">
         <Item title="Paste anything">
-          PEM, raw Base64, Base64 that wraps a PEM file, hex, DER, a PKCS#7 bundle or a
-          whole chain. The format is detected for you.
+          PEM, raw Base64, Base64 that wraps a PEM file, hex, DER, a PKCS#7 bundle, a
+          PFX / PKCS#12 file or a whole chain. The format is detected for you.
         </Item>
         <Item title="See everything">
           Subject, issuer, validity, SANs, key, signature, key usage, basic constraints,

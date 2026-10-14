@@ -5,7 +5,8 @@ import { useCallback, useId, useRef, useState } from 'react';
 import { Badge, Button } from '@/components/ui/primitives';
 import { cn } from '@/lib/utils';
 
-const ACCEPTED = '.crt,.cer,.pem,.der,.cert,.p7b,.p7c,.txt,application/x-x509-ca-cert';
+const ACCEPTED =
+  '.crt,.cer,.pem,.der,.cert,.p7b,.p7c,.pfx,.p12,.txt,application/x-x509-ca-cert,application/x-pkcs12';
 
 export interface CertificateInputProps {
   value: string;
@@ -119,7 +120,7 @@ export function CertificateInput({
         onChange={(event) => onChange(event.target.value)}
         placeholder={
           '-----BEGIN CERTIFICATE-----\nMIIEFTCCAv2gAwIBAgIU...\n-----END CERTIFICATE-----\n\n' +
-          'Base64, DER, a whole chain or a bundle also work. Or drop a .crt / .cer / .pem / .der file here.'
+          'Base64, DER, a whole chain or a bundle also work. Or drop a .crt / .cer / .pem / .der / .pfx file here.'
         }
         rows={value ? 8 : 6}
         className={cn(
