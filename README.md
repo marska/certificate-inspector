@@ -29,6 +29,11 @@ See the [LICENSE](LICENSE) file for the full text.
 - **Format detection** — PEM, raw Base64, Base64 that wraps a whole PEM file, hex, binary
   DER, several certificates concatenated, and PKCS#7 / `.p7b` bundles. No "which format is
   this?" step.
+- **PFX / PKCS#12** — `.pfx` / `.p12` files (or their Base64) are opened in the browser.
+  The password is asked for only when needed, checked against the file's MAC and used
+  only to decrypt the certificates; private keys are left encrypted and never read.
+  PBES2 (PBKDF2 + AES), the OpenSSL 3 and current Windows default, is supported; the
+  legacy RC2 / 3DES schemes are reported with an `openssl` command to convert them.
 - **Summary** — subject, issuer, serial (hex and decimal), version, validity, days
   remaining, CA and self-signed flags.
 - **Validity** — UTC or local time, validity period, and a bar showing how much of the

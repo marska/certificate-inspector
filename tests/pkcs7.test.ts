@@ -1,4 +1,3 @@
-import * as asn1js from 'asn1js';
 import {
   Certificate,
   ContentInfo,
@@ -78,30 +77,5 @@ describe('PKCS#7 bundles', () => {
       'root',
     ]);
     expect(chain.cryptographicStatus).toBe('valid');
-  });
-});
-
-describe('PKCS#12 containers', () => {
-  it('is detected and refused with an actionable message', () => {
-    // SEQUENCE { INTEGER 3, SEQUENCE { OID pkcs7-data, ... } }
-    const pfx = new asn1js.Sequence({
-      value: [
-        new asn1js.Integer({ value: 3 }),
-        new asn1js.Sequence({
-          value: [
-            new asn1js.ObjectIdentifier({ value: '1.2.840.113549.1.7.1' }),
-            new asn1js.OctetString({ valueHex: new Uint8Array([1, 2, 3]).buffer }),
-          ],
-        }),
-      ],
-    });
-    const bytes = new Uint8Array(pfx.toBER(false));
-
-    expect(detectDerShape(bytes)).toBe('pkcs12');
-
-    const result = decodeInput(bytes);
-    expect(result.detectedFormat).toBe('pkcs12');
-    expect(result.issues[0].code).toBe('PKCS12_UNSUPPORTED');
-    expect(result.issues[0].detail).toContain('openssl pkcs12');
   });
 });

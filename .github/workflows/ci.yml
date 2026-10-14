@@ -65,7 +65,7 @@ jobs:
       # Handed to the deploy job rather than rebuilt there, so the bytes that go
       # to Cloudflare are the bytes these tests ran against.
       - name: Keep the export for deployment
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: static-export
           path: out
@@ -270,14 +270,14 @@ jobs:
       # No checkout and no rebuild: this is the export the verify job tested.
       - name: Take the tested export
         if: steps.gate.outputs.deploy == 'true'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: static-export
           path: out
 
       - name: Deploy to Cloudflare Pages
         if: steps.gate.outputs.deploy == 'true'
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
