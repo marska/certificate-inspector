@@ -21,7 +21,7 @@
     "next": "16.3.6",
     "pkijs": "^3.4.1",
     "pvtsutils": "^1.3.6",
-    "pvutils": "^1.2.0",
+    "pvutils": "^2.0.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "tailwind-merge": "^3.7.0"
