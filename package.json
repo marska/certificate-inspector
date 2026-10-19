@@ -14,16 +14,16 @@
     "check": "npm run typecheck && npm run lint && npm run test"
   },
   "dependencies": {
-    "asn1js": "^3.0.10",
+    "asn1js": "^3.1.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.48.0",
-    "next": "16.3.6",
+    "lucide-react": "^1.58.0",
+    "next": "16.4.2",
     "pkijs": "^3.4.1",
     "pvtsutils": "^1.3.6",
     "pvutils": "^1.2.0",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
