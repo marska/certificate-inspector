@@ -17,13 +17,13 @@
     "asn1js": "^3.0.10",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.48.0",
-    "next": "16.3.6",
+    "lucide-react": "^1.61.0",
+    "next": "16.4.3",
     "pkijs": "^3.4.1",
     "pvtsutils": "^1.3.6",
     "pvutils": "^1.2.0",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
